@@ -1,0 +1,77 @@
+function sailboat_smc(zref::Array{Float64,1}, z::Array{Float64,1}, vw::Float64, γw::Float64, 
+                        vc::Float64, ϕc::Float64)
+    
+    x = z[1]
+    y = z[2]
+    u = z[3]
+    ψ = z[4]
+    r = z[5]
+    δs = z[6]
+    δr = z[7]
+    
+    xd = zref[1]
+    yd = zref[2]
+    
+    fs = p[4] * (vw * sin(ψ + δs - γw) - u * sin(δs))
+    fr = p[5] * u * sin(δr)
+    
+    dx = u * cos(ψ) + vc * cos(ϕc)
+    dy = u * sin(ψ) + vc * sin(ϕc)
+    dψ = r
+    du = 1 / p[9] * (-p[2] * u^2 - fr * sin(δr) + fs * sin(δs))
+    dr = 1 / p[10] * (-p[3] * r - p[8] * fr * cos(δr) + (p[6] - p[7] * cos(δs)) * fs)
+    
+    ddx = du * cos(ψ) - u * sin(ψ) * dψ
+    ddy = du * sin(ψ) + u * cos(ψ) * dψ
+    ddψ = dr
+    
+    A11 = 1
+    A12 = 0
+    A21 = p[7] * fs * sin(δs) / p[10] + p[4] * (p[7] * cos(δs) - p[6]) * (vw * sin(ψ + δs) + u * cos(δs)) / p[10]
+    A22 = p[8] * (fr * sin(δr) - p[5] * u * cos(δr)^2) / p[10]
+    
+    B11 = 0
+    B21 = - p[3] * ddψ /p[10] + p[4] * (p[7] * cos(δs) - p[6]) * (vw * u * sin(ψ + δs) + du * sin(δs)) / p[10] - p[5] * p[8] * du * sin(δr) * cos(δr) / p[10]
+    
+    C11 = 0
+    C21 = dψ + 2 * ddψ
+    
+    A_z = [A11 A12; A21 A22]
+    B_z = [B11, B21]
+    C_z = [C11, C21]
+    
+    ex = x - xd
+    ey = y - yd
+    ψref = atan2(ey, ex)
+    dψref = (dy * ex - dx * ey) / (ex^2 + ey^2)
+    ddψref = (ddy * ex - ddx * ey) / (ex^2 + ey^2) - 2 * (dy * ex - dx * ey) * (dy * ey + dx * ex) / (ex^2 + ey^2)^2
+    
+    TACK_TOL = 0.1
+    if abs(γw - ψ) < π + TACK_TOL
+        ψref_sat = 2 * π / 3 + γw
+        ψref = (abs(ψref) > ψref_sat) ?  sign(ψref) * ψref_sat : ψref
+        dψref = 0.
+        ddψref = 0.
+    end
+    ψref = atan2(sin(ψref), cos(ψref))
+    #println(ψref)
+    
+    δsref = ψ/2 + π * (1/2 - ψ/(2 * π)) #This equation yields π/2 for any ψ. VERIFY!!!
+    
+    e1 = δsref - δs
+    
+    e2 = ψref - ψ
+    de2 = dψref - dψ
+    dde2 = ddψref - ddψ
+    
+    λ = [1,2,1]
+    S1 = e1
+    S2 = λ[1] * e2 + λ[2] * de2 + λ[3] * dde2
+    S = [S1, S2]
+    
+    K = 3.5
+    cmd = inv(A_z) *  (2/π * atan.(K * π/2 * S ) - B_z - C_z) # K*sign.(S)
+    
+    return cmd[1], cmd[2] 
+    
+end
