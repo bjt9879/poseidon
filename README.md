@@ -3,7 +3,7 @@
 
 The sailboat model implemented in this notebook is based on the system presented in [Modeling, control and state-estimation for an autonomous sailboat](https://uu.diva-portal.org/smash/get/diva2:850625/FULLTEXT01.pdf).
 
-The model uses the *North-East-Up* (NED) coordinate system as inertial reference frame (*n-frame*). The body fixed frame (*b-frame*) is defined as a rotating frame as indicated in the following figure.
+The model uses the *North-East-Up* coordinate system as inertial reference frame (*n-frame*). The body fixed frame (*b-frame*) is defined as a rotating frame as indicated in the following figure.
 
 ![figure1](./julia-code/images/sailboat-02.png)
 <center><b>Figure 1: </b> <i> Sailboat model reference frames and variables </i></center>
